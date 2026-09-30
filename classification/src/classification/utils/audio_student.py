@@ -64,7 +64,11 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        if sr == newsr:
+            resig = sig
+        else:
+            # librosa applies an anti-aliasing filter before decimating
+            resig = librosa.resample(sig, orig_sr=sr, target_sr=newsr)
 
         return (resig, newsr)
 
@@ -108,9 +112,11 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        # Random gain between 1/scaling_limit and scaling_limit
+        factor = np.random.uniform(1 / scaling_limit, scaling_limit)
+        sig = sig * factor
 
-        return audio
+        return (sig, sr)
 
     def add_noise(audio, sigma=0.05) -> tuple[ndarray, int]:
         """
@@ -121,9 +127,9 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        sig = sig + sigma * np.random.randn(len(sig))
 
-        return audio
+        return (sig, sr)
 
     def echo(audio, nechos=2) -> tuple[ndarray, int]:
         """
@@ -151,13 +157,21 @@ class AudioUtil:
         :param filt: The filter to apply.
         """
         sig, sr = audio
+        n = len(sig)
 
-        ### TO COMPLETE
+        # Resample the filter onto the positive-frequency bins of the signal.
+        # Using rfft/irfft makes the symmetrization implicit (real output).
+        H = np.interp(
+            np.linspace(0, 1, n // 2 + 1),
+            np.linspace(0, 1, len(filt)),
+            filt,
+        )
+        sig = np.fft.irfft(np.fft.rfft(sig) * H, n)
 
         return (sig, sr)
 
     def add_bg(
-        self, dataset, num_sources=1, max_ms=5000, amplitude_limit=0.1
+        audio, dataset, num_sources=1, max_ms=5000, amplitude_limit=0.1
     ) -> tuple[ndarray, int]:
         """
         Adds up sounds uniformly chosen at random to audio.
@@ -169,10 +183,33 @@ class AudioUtil:
         :param amplitude_limit: The maximum amplitude of the added sounds.
         """
         sig, sr = audio
+        sig = np.copy(sig)
+        n = len(sig)
+        ref = np.max(np.abs(sig)) if np.any(sig) else 1.0
 
-        ### TO COMPLETE
+        for _ in range(num_sources):
+            # Pick a random sound in the dataset
+            classname = random.choice(dataset.list_classes())
+            idx = random.randint(0, dataset.naudio[classname] - 1)
+            bg = AudioUtil.open(dataset[classname, idx])
+            bg, _ = AudioUtil.resample(bg, sr)
+            bg, _ = AudioUtil.pad_trunc((bg, sr), max_ms)
 
-        return audio
+            # Match the length of the main signal
+            if len(bg) >= n:
+                start = random.randint(0, len(bg) - n)
+                bg = bg[start : start + n]
+            else:
+                bg = np.concatenate((bg, np.zeros(n - len(bg))))
+
+            # Scale the background relative to the main signal
+            peak = np.max(np.abs(bg))
+            if peak > 0:
+                bg = bg / peak * ref * np.random.uniform(0, amplitude_limit)
+
+            sig += bg
+
+        return (sig, sr)
 
     def specgram(audio, Nft=512, fs2=11025) -> ndarray:
         """
@@ -182,9 +219,19 @@ class AudioUtil:
         :param Nft: The number of points of the FFT.
         :param fs2: The sampling frequency.
         """
-        ### TO COMPLETE
+        sig, sr = audio
+        if sr != fs2:
+            sig, sr = AudioUtil.resample(audio, fs2)
+
+        # Cut into non-overlapping frames of Nft samples
+        L = len(sig) - len(sig) % Nft
+        frames = np.reshape(sig[:L], (L // Nft, Nft))
+
+        # Window + FFT, keep Nft/2 positive-frequency bins
+        frames = frames * np.hamming(Nft)
+        stft = np.abs(np.fft.fft(frames, Nft, axis=1)[:, : Nft // 2]).T
         # stft /= float(2**8)
-        return stft
+        return stft  # shape: (Nft//2, n_frames)
 
     def get_hz2mel(fs2=11025, Nft=512, Nmel=20) -> ndarray:
         """
@@ -209,7 +256,9 @@ class AudioUtil:
         :param Nft: The number of points of the FFT.
         :param fs2: The sampling frequency.
         """
-        ### TO COMPLETE
+        stft = AudioUtil.specgram(audio, Nft=Nft, fs2=fs2)  # (Nft//2, T)
+        mels = AudioUtil.get_hz2mel(fs2=fs2, Nft=Nft, Nmel=Nmel)  # (Nmel, Nft//2)
+        melspec = mels @ stft  # (Nmel, T)
 
         return melspec
 
@@ -293,7 +342,7 @@ class Feature_vector_DS:
         :param audio: audio to treat.
         """
         return AudioUtil.melspectrogram(audio, Nmel=self.nmel, Nft=self.Nft)
-        
+
     def __getitem__(self, cls_index: tuple[str, int]) -> tuple[ndarray, int]:
         """
         Get i'th item in dataset.
@@ -301,7 +350,6 @@ class Feature_vector_DS:
         :param cls_index: Class name and index.
         """
         return self.get_feature_vector(self.get_audiosignal(cls_index))
-
 
     def display(self, cls_index: tuple[str, int], show_features=False):
         """
@@ -354,7 +402,7 @@ class Feature_vector_DS:
                 amplitude_limit=0.1,
             )
         elif aug == "echo":
-            audio = AudioUtil.add_echo(audio)
+            audio = AudioUtil.echo(audio)  # was AudioUtil.add_echo (doesn't exist)
         elif aug == "noise":
             audio = AudioUtil.add_noise(audio, sigma=0.05)
         elif aug == "scaling":
@@ -367,7 +415,6 @@ class Feature_vector_DS:
             )
 
         return self.treat_spec(sgram)
-        
 
     def get_feature_vectors(self) -> tuple[ndarray, ndarray]:
         """Returns all feature vectors and their labels."""
@@ -378,7 +425,7 @@ class Feature_vector_DS:
 
         for _class_idx, classname in enumerate(classnames):
             for idx in range(self.dataset.naudio[classname]):
-                audio = self.get_audiosignal((classname,idx))
+                audio = self.get_audiosignal((classname, idx))
                 sgram = self.get_feature_vector(audio)
                 fv = self.treat_spec(sgram)
 
@@ -387,7 +434,7 @@ class Feature_vector_DS:
 
                 if self.data_aug != None:
                     for d_aug in self.data_aug:
-                        if np.random.random() < d_aug[1]: # Use randomness to not augment all data
+                        if np.random.random() < d_aug[1]:  # Use randomness to not augment all data
                             fv = self.get_augmented_fv(d_aug[0], audio)
                             X += list(fv)
                             y += [classname] * len(fv)
