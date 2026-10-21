@@ -19,7 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -66,13 +68,27 @@ extern uint8_t packet[PACKET_LENGTH];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+static void print_featvec_hex(q15_t mel_vectors[][MELVEC_LENGTH])
+{
+    q15_t vmax; uint32_t idx;
+    arm_max_q15(&mel_vectors[0][0], N_MELVECS * MELVEC_LENGTH, &vmax, &idx);
+    if (vmax <= 0) vmax = 1;
+
+    printf("DF:HEX:0000000000000000");
+    for (int j = 0; j < N_MELVECS; j++)
+        for (int i = 0; i < MELVEC_LENGTH; i++) {
+            q15_t m = mel_vectors[j][i] > 0 ? mel_vectors[j][i] : 0;
+            uint16_t v = (uint16_t)(((uint32_t) m * 0xFFFF) / vmax);
+            printf("%02x%02x", v & 0xFF, v >> 8);
+        }
+    printf("00000000000000000000000000000000\r\n");
+}
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-extern ADC_HandleTypeDef hadc1;
 /*
  * @brief Manages external interrupts : user button and S2LP radio.
  * @note This overrides the __weak__ function in stm32l4xx_hal_gpio.c to provide an user implementation.
@@ -80,25 +96,17 @@ extern ADC_HandleTypeDef hadc1;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == B1_Pin) { // User button
-		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn); // Prevent re-entry, only one execution per button press
-
-		size_t sample_count = 10000;
-		uint16_t samples[sample_count];
-		for (uint32_t i=0; i < sample_count; ++i) {
-			HAL_ADC_Start(&hadc1); // configure and launch single conversion
-			HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY); // wait for conversion
-			samples[i] = (uint16_t) HAL_ADC_GetValue(&hadc1); // read converted value
-			HAL_ADC_Stop(&hadc1); // reset configuration
+		if (acquisition_start()) {
+			printf("Acquisition not started, already running\r\n");
+			}
+	else {
+		printf("Acquisition started\r\n");
 		}
-		print_raw_samples(samples, sample_count);
-
-        __HAL_GPIO_EXTI_CLEAR_FLAG(B1_Pin);
-        HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
-        HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 	}
 	else if (GPIO_Pin == RADIO_INT_Pin) { // S2LP radio, will be used in P2d
-		S2LP_IRQ_Handler();
+	S2LP_IRQ_Handler();
 	}
+
 }
 /* USER CODE END 0 */
 
@@ -131,8 +139,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_SPI1_Init();
   MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 #if DEBUGP
 	MX_LPUART1_UART_Init();
@@ -155,12 +165,26 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	while (1)
-	{
-    /* USER CODE END WHILE */
+  while (1)
+  {
+      if (is_processing) {
+          melvec_compute((q15_t *) samples_buf_to_process, mel_vectors[cur_melvec]);
+          cur_melvec++;
+          is_processing = 0;
 
-    /* USER CODE BEGIN 3 */
-	}
+          if (cur_melvec == N_MELVECS) {          // feature vector complete
+              acquisition_stop();
+              cur_melvec = 0;
+              print_melvectors(mel_vectors, N_MELVECS);
+              print_featvec_hex(mel_vectors);     // for the uart-reader MEL window
+  #if CONTINUOUS_ACQ
+              acquisition_start();
+  #endif
+          }
+      }
+      /* USER CODE END WHILE */
+      /* USER CODE BEGIN 3 */
+  }
 #endif // RUN_CONFIG == EVAL_RADIO
   /* USER CODE END 3 */
 }
