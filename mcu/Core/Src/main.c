@@ -172,11 +172,17 @@ int main(void)
           cur_melvec++;
           is_processing = 0;
 
+
+
           if (cur_melvec == N_MELVECS) {          // feature vector complete
               acquisition_stop();
               cur_melvec = 0;
               print_melvectors(mel_vectors, N_MELVECS);
               print_featvec_hex(mel_vectors);     // for the uart-reader MEL window
+
+              make_packet();
+              send_packet();
+
   #if CONTINUOUS_ACQ
               acquisition_start();
   #endif

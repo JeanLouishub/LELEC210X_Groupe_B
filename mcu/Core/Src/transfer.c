@@ -58,13 +58,16 @@ void make_packet(void)
 	//sensor_id
 	packet[1] = SENSOR_ID;
 
-	//payload_length
-	memset(packet[2], 2 * N_MELVECS * MELVEC_LENGTH, 2);
+	// payload_length (2 bytes, big endian)
+    packet[2] = (PAYLOAD_LENGTH >> 8) & 0xFF;
+    packet[3] = PAYLOAD_LENGTH & 0xFF;
+ 
+    // packet_serial (4 bytes, big endian)
+    packet[4] = (packet_serial >> 24) & 0xFF;
+    packet[5] = (packet_serial >> 16) & 0xFF;
+    packet[6] = (packet_serial >> 8) & 0xFF;
+    packet[7] = packet_serial & 0xFF;
 
-	//packet_serial
-	memset(packet[4],packet_serial,4);
-
-    packet_serial++;
 
 
 	//// 2- Payload ////
@@ -95,10 +98,21 @@ void make_packet(void)
     UNUSED(i);
     UNUSED(AES_Key);
 
-    // Copy the result of CBC-MAC-AES to the tag.
-    for (int j=0; j<16; j++) {
-        tag[j] = state[j];
+	for(i =0; i < msg_len; i+=16){
+		// Copy the result of CBC-MAC-AES to the tag. 
+		for (size_t j = 0; j < 16; j++) {
+
+				if (i + j < msg_len) {
+					state[j] ^= msg_in[i + j];
+				}
+			}
+			// state <- AES_k(state)
+			AES128_encrypt(state, AES_Key);
     }
+
+	for (int j=0; j<16;j++){
+		tag[j] = state[j];
+	}
 
     //// 4- Packet id increment ////
 	packet_serial += 1;
