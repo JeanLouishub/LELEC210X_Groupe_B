@@ -19,10 +19,10 @@ static const uint8_t AES_Key[16] = {0x00,0x00,0x00,0x00,
 									0x00,0x00,0x00,0x00,
 									0x00,0x00,0x00,0x00,
 									0x00,0x00,0x00,0x00};
+uint32_t sequence_number = 0;
 
 // External variables
 extern q15_t mel_vectors[N_MELVECS][MELVEC_LENGTH];
-
 /*
  * @brief Make the packet in memory by filling in the header, payload and tag.
  *
@@ -50,8 +50,22 @@ void make_packet(void)
 {
 	//// 1- Header ////
 	// Initially, the whole packet header is set to 0s
-	memset(packet, 0, HEADER_LENGTH);
-	// TODO replace the memset 0 by filling in each header field with the right value
+	memset(packet,0,HEADER_LENGTH);
+
+	//r
+	packet[0] = 0;
+
+	//sensor_id
+	packet[1] = SENSOR_ID;
+
+	//payload_length
+	memset(packet[2], 2 * N_MELVECS * MELVEC_LENGTH, 2);
+
+	//packet_serial
+	memset(packet[4],packet_serial,4);
+
+    packet_serial++;
+
 
 	//// 2- Payload ////
 	// BE encoding of each mel coef
