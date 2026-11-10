@@ -165,31 +165,41 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
       if (is_processing) {
+          HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_SET); // feature vector complet
           melvec_compute((q15_t *) samples_buf_to_process, mel_vectors[cur_melvec]);
+          HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_RESET); // feature vector complete
+
+
           cur_melvec++;
           is_processing = 0;
 
 
 
-          if (cur_melvec == N_MELVECS) {          // feature vector complete
+          if (cur_melvec == N_MELVECS) {
+
               acquisition_stop();
+              // feature vector complete
               cur_melvec = 0;
               print_melvectors(mel_vectors, N_MELVECS);
               print_featvec_hex(mel_vectors);     // for the uart-reader MEL window
 
+              HAL_GPIO_WritePin(GPOUT2_GPIO_Port, GPOUT2_Pin, GPIO_PIN_SET);
               make_packet();
               send_packet();
+              HAL_GPIO_WritePin(GPOUT2_GPIO_Port, GPOUT2_Pin, GPIO_PIN_RESET); // feature vector complete
 
   #if CONTINUOUS_ACQ
               acquisition_start();
   #endif
           }
       }
-      /* USER CODE END WHILE */
-      /* USER CODE BEGIN 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
 #endif // RUN_CONFIG == EVAL_RADIO
   /* USER CODE END 3 */
