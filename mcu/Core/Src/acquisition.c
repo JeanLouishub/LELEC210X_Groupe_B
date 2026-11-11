@@ -37,7 +37,7 @@ int acquisition_start(void)
 	is_acq_running = 1;
 
 	// TODO P2b
-	HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_SET);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t *)  samples_double_buf, 2*SAMPLES_PER_MELVEC);
 	HAL_TIM_Base_Start(&htim3);
 
@@ -58,7 +58,7 @@ int acquisition_stop(void)
 	// TODO P2b
 	HAL_TIM_Base_Stop(&htim3);
 	HAL_ADC_Stop_DMA(&hadc1);
-	HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_RESET);
 
 
 	is_acq_running = 0;

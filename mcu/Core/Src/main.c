@@ -184,19 +184,24 @@ int main(void)
               acquisition_stop();
               // feature vector complete
               cur_melvec = 0;
-              print_melvectors(mel_vectors, N_MELVECS);
-              print_featvec_hex(mel_vectors);     // for the uart-reader MEL window
+              //print_melvectors(mel_vectors, N_MELVECS);
+              //print_featvec_hex(mel_vectors);     // for the uart-reader MEL window
 
-              HAL_GPIO_WritePin(GPOUT2_GPIO_Port, GPOUT2_Pin, GPIO_PIN_SET);
+              HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_SET);
               make_packet();
+              HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_RESET);
+
+              HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_SET);
               send_packet();
-              HAL_GPIO_WritePin(GPOUT2_GPIO_Port, GPOUT2_Pin, GPIO_PIN_RESET); // feature vector complete
+              HAL_GPIO_WritePin(GPOUT_GPIO_Port, GPOUT_Pin, GPIO_PIN_RESET); // feature vector complete
 
   #if CONTINUOUS_ACQ
               acquisition_start();
   #endif
           }
       }
+      __WFI();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
