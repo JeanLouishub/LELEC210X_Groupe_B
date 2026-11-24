@@ -33,9 +33,10 @@ class tutorial(gr.basic_block):
     docstring for block tutorial
     """
 
-    def __init__(self, offset):
+    def __init__(self, offset,amplitude):
 
         self.offset = offset
+        self.amplitude = amplitude
 
         gr.basic_block.__init__(
             self,
@@ -51,7 +52,9 @@ class tutorial(gr.basic_block):
 
         self.logger = logging.getLogger("tutorial")
 
-
+    def set_amplitude(self,amplitude):
+        self.amplitude = amplitude
+    
     def forecast(self, noutput_items, ninputs):
         """
         Forecast is only called from a general block
@@ -77,7 +80,7 @@ class tutorial(gr.basic_block):
         # Never produce more than the output buffer can hold (nor consume more than we produce)
         nitems = min(len(input_items[0]), len(output_items[0]))
 
-        output_items[0][:nitems] = input_items[0][:nitems] + (self.offset + 1j*self.offset)
+        output_items[0][:nitems] = self.amplitude * input_items[0][:nitems] + (self.offset + 1j*self.offset)
 
         self.consume_each(nitems)
 
