@@ -19,7 +19,35 @@ import numpy as np
 
 
 # =============================================================================
-# Load the block sources from python/ 
+# Stubs for GNU Radio modules (pmt, gnuradio, distutils) when they are not
+# installed: only the GNU Radio block classes use them, not the tested functions.
+# =============================================================================
+
+def _stub_module(name, **attrs):
+    mod = types.ModuleType(name)
+    mod.__dict__.update(attrs)
+    # Any other attribute (gr.basic_block, gr.TPP_DONT, ...) resolves to a dummy class
+    mod.__getattr__ = lambda attr: type(attr, (), {})
+    sys.modules[name] = mod
+    return mod
+
+
+for _name in ("pmt", "gnuradio", "distutils.version"):
+    try:
+        importlib.import_module(_name)
+    except ImportError:
+        if _name == "gnuradio":
+            _gr = _stub_module("gnuradio.gr")
+            _stub_module("gnuradio", gr=_gr)
+        elif _name == "distutils.version":
+            _ver = _stub_module("distutils.version", LooseVersion=str)
+            _stub_module("distutils", version=_ver)
+        else:
+            _stub_module(_name)
+
+
+# =============================================================================
+# Load the block sources from python/
 # =============================================================================
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "python"

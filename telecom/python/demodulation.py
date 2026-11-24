@@ -55,7 +55,20 @@ def demodulate(y, B, R, Fdev):
 
     nb_syms = int(len(y)/R)
 
-    bits_hat = np.zeros(nb_syms)
+    # One row per symbol: shape (nb_syms, R)
+    y = np.reshape(y[:nb_syms * R], (nb_syms, R))
+
+    # Reference tones over one symbol period (same phase ramp as the modulator)
+    n = np.arange(R)
+    e_plus = np.exp(1j * 2 * np.pi * f * n / R)    # tone at +Fdev (bit 1)
+    e_minus = np.exp(-1j * 2 * np.pi * f * n / R)  # tone at -Fdev (bit 0)
+
+    # Correlate each symbol with both tones: r = (1/R) * sum_n y[n] * conj(e[n])
+    r1 = y @ np.conj(e_plus) / R
+    r0 = y @ np.conj(e_minus) / R
+
+    # Non-coherent decision: compare magnitudes (phase-insensitive)
+    bits_hat = (np.abs(r1) > np.abs(r0)).astype(int)
 
     return bits_hat
 

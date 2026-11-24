@@ -1,0 +1,32 @@
+# Conda environment for the telecom part (GNU Radio + Qt + gr-LELEC210X build tools)
+#
+#   conda env create -f telecom/environment.yml
+#   conda activate lelec210x
+#
+# Then build and install the gr-LELEC210X module into the environment (no sudo):
+#
+#   cd telecom && mkdir -p build-conda && cd build-conda
+#   cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DCMAKE_PREFIX_PATH=$CONDA_PREFIX
+#   cmake --build . && cmake --build . --target install
+name: lelec210x
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  # GNU Radio (metapackage: runtime, GRC companion, Qt GUI blocks, PyQt5)
+  - gnuradio=3.10
+  - pyqt=5
+  # Build tools for the out-of-tree module
+  - gnuradio-build-deps
+  - cmake
+  - make
+  - pkg-config
+  # Analysis
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - setuptools
+variables:
+  # conda-forge Qt5 has no Wayland plugin: use X11 (XWayland on Wayland desktops)
+  QT_QPA_PLATFORM: xcb
