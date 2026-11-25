@@ -45,7 +45,19 @@ def cfo_estimation(y, B, R, Fdev, N):
     cfo : estimated frequency offset in Hz
     """
 
-    return 0
+    # Length of one repeated block: N symbols of R samples each
+    Nt = N * R
+
+    # Moose: correlate the second block with the first one. Without CFO they
+    # are identical, so the phase of alpha_hat is the rotation accumulated by
+    # the CFO over one block. The normalisation by sum(|y|^2) is skipped since
+    # it does not change the phase.
+    alpha_hat = np.sum(y[Nt:2 * Nt] * np.conj(y[:Nt]))
+
+    # One block lasts Nt * T / R = Nt / (B * R) seconds
+    cfo = np.angle(alpha_hat) / (2 * np.pi * Nt / (B * R))
+
+    return cfo
 
 
 def sto_estimation(y, B, R, Fdev,sync_word):

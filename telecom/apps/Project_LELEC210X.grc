@@ -42,7 +42,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1032, 1828.0]
+    coordinate: [944, 1824.0]
     rotation: 0
     state: true
 - name: Enable_detection
@@ -71,7 +71,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [72, 120.0]
+    coordinate: [728, 16.0]
     rotation: 180
     state: enabled
 - name: EsN0_max
@@ -138,7 +138,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1'
+    value: '0'
   states:
     bus_sink: false
     bus_source: false
@@ -162,7 +162,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1'
+    value: '0'
   states:
     bus_sink: false
     bus_source: false
@@ -186,7 +186,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1'
+    value: '0'
   states:
     bus_sink: false
     bus_source: false
@@ -239,7 +239,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [912, 1828.0]
+    coordinate: [848, 1824.0]
     rotation: 0
     state: true
 - name: Npackets
@@ -275,7 +275,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 1828.0]
+    coordinate: [712, 1824.0]
     rotation: 0
     state: true
 - name: Print_packet_info
@@ -304,7 +304,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [96, 112.0]
+    coordinate: [584, 16.0]
     rotation: 0
     state: enabled
 - name: Reduce_print
@@ -333,7 +333,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [96, 124.0]
+    coordinate: [472, 16.0]
     rotation: 180
     state: enabled
 - name: Simulation
@@ -357,7 +357,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 252.0]
+    coordinate: [920, 216.0]
     rotation: 0
     state: enabled
 - name: Tag_delay
@@ -442,12 +442,12 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '0.5'
+    value: '0.03891'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [520, 1828.0]
+    coordinate: [568, 1824.0]
     rotation: 0
     state: true
 - name: detection_threshold_qt
@@ -487,7 +487,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [96, 128.0]
+    coordinate: [344, 16.0]
     rotation: 0
     state: enabled
 - name: export_file_name
@@ -588,7 +588,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [96, 120.0]
+    coordinate: [240, 16.0]
     rotation: 180
     state: enabled
 - name: noise_std
@@ -684,7 +684,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [552, 204.0]
+    coordinate: [544, 200.0]
     rotation: 180
     state: enabled
 - name: random_payload
@@ -929,7 +929,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [520, 1632.0]
+    coordinate: [488, 1620.0]
     rotation: 0
     state: enabled
 - name: LELEC210X_rf215_cfg_stream_sender_0
@@ -976,7 +976,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [816, 1656.0]
+    coordinate: [856, 1640.0]
     rotation: 0
     state: enabled
 - name: LELEC210X_tcp_source_0
@@ -1889,4 +1889,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.12.0
+  grc_version: 3.10.11.0
